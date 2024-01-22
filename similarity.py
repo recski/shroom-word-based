@@ -1,3 +1,18 @@
+from nltk.corpus import wordnet as wn
+
+from embedding import TSVEmbedding
+
+PARAGRAM = TSVEmbedding('vectors/paragram_300_sl999/paragram_300_sl999.txt', tab_first=False)
+
+def paragram(w1, w2):
+    return PARAGRAM.get_sim(w1, w2)
+
+def wn_sim_wup(w1, w2):
+    sims = [s1.wup_similarity(s2) for s1 in wn.synsets(w1) for s2 in wn.synsets(w2)]
+    if len(sims) == 0:
+        return 0
+    return max(sims)
+
 def levenshtein(s1, s2):
     """
     from https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python

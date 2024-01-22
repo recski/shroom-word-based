@@ -4,6 +4,7 @@ import random
 import sys
 
 import stanza
+from tqdm import tqdm
 from tuw_nlp.text.pipeline import CachedStanzaPipeline
 
 from utils import preprocess_data
@@ -18,6 +19,12 @@ def ensure_dir(path):
 def edit_distance(line):
     return word_alignment(line, "levenshtein")
 
+def wordnet(line):
+    return word_alignment(line, "wordnet")
+
+def paragram(line):
+    return word_alignment(line, "paragram")
+
 
 def always_yes(line):
     p = random.choice(("0.6", "0.8", "1.0"))
@@ -30,17 +37,19 @@ def always_no(line):
 
 
 SYSTEMS = {
-    "always_no": always_no,
-    "always_yes": always_yes,
-    "edit_distance": edit_distance,
+    "paragram": paragram
 }
+#    "always_no": always_no,
+#    "always_yes": always_yes,
+#    "edit_distance": edit_distance,
+#    "wordnet": wordnet,
 
 
 def main():
     aware_fn, agnostic_fn = sys.argv[1:]
     fns = {"aware": aware_fn, "agnostic": agnostic_fn}
 
-    nlp_pipeline = stanza.Pipeline("en", processors="tokenize,pos")
+    nlp_pipeline = stanza.Pipeline("en", processors="tokenize,pos,lemma")
     nlp_cache = "nlp_cache.json"
     with CachedStanzaPipeline(nlp_pipeline, nlp_cache) as nlp:
         for data_type in ("aware", "agnostic"):
@@ -51,7 +60,8 @@ def main():
 
             for name, function in SYSTEMS.items():
                 output = []
-                for line in preprocessed_data:
+                print(f'running method "{name}"')
+                for line in tqdm(preprocessed_data):
                     label, p = function(line)
                     output.append(
                         {"id": line.get("id"), "label": label, "p(Hallucination)": p}

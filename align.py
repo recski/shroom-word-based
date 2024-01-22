@@ -1,35 +1,54 @@
-from similarity import levenshtein
+from nltk.corpus import stopwords
 
-METHODS = {"levenshtein": levenshtein}
+from similarity import levenshtein, wn_sim_wup
 
-THRESHOLDS = {"levenshtein": 0.5}
+
+METHODS = {"levenshtein": levenshtein, "wordnet": wn_sim_wup}
+
+THRESHOLDS = {"levenshtein": 0.275, "wordnet": 0.6}
+
+
+def sim_norm(x):
+    return 1 / (1 + x)
+
+
+NORMALIZATION = {"levenshtein": sim_norm, "wordnet": lambda x: x, "paragram": lambda x: x}
+
 
 def word_alignment(line, metric):
-    
+
     method = METHODS[metric]
     threshold = THRESHOLDS[metric]
+    norm_fnc = NORMALIZATION[metric]
 
-    hyp_toks = [word['text'] for sen in line['hyp']['nlp'] for word in sen]
-    tgt_toks = [word['text'] for sen in line['tgt']['nlp'] for word in sen]
-    src_toks = [word['text'] for sen in line['src']['nlp'] for word in sen]
+    sw = set(stopwords.words("english"))
 
-    if line['ref'] == 'tgt':
+    def get_toks(text):
+        toks = [word["lemma"] for sen in text["nlp"] for word in sen]
+        return [tok for tok in toks if tok not in sw]
+
+    hyp_toks = get_toks(line["hyp"])
+    tgt_toks = get_toks(line["tgt"])
+    src_toks = get_toks(line["src"])
+
+    if line["ref"] == "tgt":
         ref_toks = tgt_toks
-    elif line['ref'] == 'src':
+    elif line["ref"] == "src":
         ref_toks = src_toks
-    elif line['ref'] == 'either':
-        if line['task'] == 'MT':
+    elif line["ref"] == "either":
+        if line["task"] == "MT":
             ref_toks = tgt_toks
         else:
             ref_toks = src_toks + tgt_toks
 
     sims = []
     for tok in hyp_toks:
-        sims.append(max(method(tok, tok2) for tok2 in ref_toks))
-
+        sims.append(max(norm_fnc(method(tok, tok2)) for tok2 in ref_toks))
+    sims = [sim for sim in sims if sim is not None]
+    if len(sims) == 0:
+        raise ValueError(f"no similarities for sentence pair: {hyp_toks}, {ref_toks}")
     avg_sim = sum(sims) / len(sims)
+    score = 1 - avg_sim
+    label = "Hallucination" if score >= threshold else "Not Hallucination"
 
-    label = 'Hallucination' if avg_sim >= threshold else 'Not Hallucination'
-
-    return label, avg_sim
-    
+    return label, score
