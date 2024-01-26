@@ -4,13 +4,34 @@ import sys
 import numpy as np
 
 
-def get_acc(pred_labels, ref_labels):
+def evaluate(pred_labels, ref_labels):
     corr = 0
+    htp = 0
+    hfp = 0
+    hfn = 0
     for i, pred_label in enumerate(pred_labels):
         ref_label = ref_labels[i]
         if pred_label == ref_label:
             corr += 1
-    return corr / len(pred_labels)
+            if pred_label == 'Hallucination':
+                htp += 1
+        elif pred_label == 'Hallucination':
+            hfp += 1
+        elif ref_label == 'Hallucination':
+            hfn += 1
+        else:
+            assert False
+
+    acc = corr / len(pred_labels)
+    print(f"{acc=}")
+    print(f"{htp=}")
+    print(f"{hfp=}")
+    print(f"{hfn=}")
+    prec = htp / (htp + hfp)
+    rec = htp / (htp + hfn)
+    print(f"{prec=}")
+    print(f"{rec=}")
+
 
 
 def get_acc_t(pred_scores, ref_labels, t):
@@ -48,9 +69,8 @@ def main():
         acc = get_acc_t(pred_scores, ref_labels, t)
         print(f"t: {t}, acc: {acc:.2f}")
 
-    labels_acc = get_acc(pred_labels, ref_labels)
-    print("labels acc:", labels_acc)
-    
+    evaluate(pred_labels, ref_labels)
+
     print_outliers(pred_data, ref_data, pred_scores, ref_scores)
 
 if __name__ == "__main__":

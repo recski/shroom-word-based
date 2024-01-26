@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 import sys
@@ -37,15 +38,19 @@ def always_no(line):
 
 
 SYSTEMS = {
-    "paragram": paragram
-}
 #    "always_no": always_no,
 #    "always_yes": always_yes,
 #    "edit_distance": edit_distance,
 #    "wordnet": wordnet,
-
+    "paragram": paragram
+    }
 
 def main():
+    logging.basicConfig(
+        format="%(asctime)s : "
+        + "%(module)s (%(lineno)s) - %(levelname)s - %(message)s"
+    )
+    logging.getLogger().setLevel(logging.WARNING)
     aware_fn, agnostic_fn = sys.argv[1:]
     fns = {"aware": aware_fn, "agnostic": agnostic_fn}
 
