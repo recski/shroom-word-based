@@ -3,6 +3,7 @@ import os
 import sys
 
 from gensim.models import Word2Vec
+from tqdm import tqdm
 import numpy as np
 
 
@@ -56,7 +57,8 @@ class CustomEmbedding(Embedding):
         return self.model.get(w)
 
     def get_sim(self, w1, w2):
-        vec1, vec2 = map(self.get_vec, (w1, w2))
+        vec1 = self.get_vec(w1)
+        vec2 = self.get_vec(w2)
         if vec1 is None or vec2 is None:
             return None
         return (
@@ -73,7 +75,7 @@ class TSVEmbedding(CustomEmbedding):
         model = {}
         logging.info('loading {0}...'.format(fn))
         with open(fn, errors='ignore') as f:
-            for line in f:
+            for line in tqdm(f):
                 if tab_first:
                     try:
                         word, vec_str = line.strip().split('\t', 1)
@@ -82,7 +84,7 @@ class TSVEmbedding(CustomEmbedding):
                         continue
                 else:
                     word, vec_str = line.strip().split(' ', 1)
-                vec = np.array(map(float, vec_str.split()))
+                vec = np.array(list(map(float, vec_str.split())))
                 model[word] = vec
 
         # pickle.dump( model, open( pickle_file, "wb" ) )

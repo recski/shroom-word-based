@@ -1,5 +1,5 @@
+
 def preprocess_data(data, nlp):
-    new_data = []
     for line in data:
         new_line = {}
         for key, value in line.items():
@@ -9,6 +9,4 @@ def preprocess_data(data, nlp):
                 new_line[key] = {'text': value, 'nlp': doc.to_dict()}
             else:
                 new_line[key] = value
-        new_data.append(new_line)
-
-    return new_data
+        yield new_line

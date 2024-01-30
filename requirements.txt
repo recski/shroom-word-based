@@ -1,0 +1,5 @@
+gensim
+protobuf==3.20.*
+stanza
+tqdm
+tuw-nlp
